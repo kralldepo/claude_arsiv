@@ -11,6 +11,7 @@ Claude Code oturumlarını Claude hesaplarınız arasında taşır.
 ![macOS 14 ve üstü](https://img.shields.io/badge/macOS-14%2B-0a84ff?logo=apple&logoColor=white)
 ![Apple Silicon ve Intel](https://img.shields.io/badge/Apple%20Silicon%20%2B%20Intel-universal-555)
 ![SwiftUI](https://img.shields.io/badge/Swift-SwiftUI-f05138?logo=swift&logoColor=white)
+[![Lisans: MIT](https://img.shields.io/badge/lisans-MIT-yellow)](LICENSE)
 
 [**Sohbet-Temizleyici-1.0.dmg indir**](https://github.com/kralldepo/claude_arsiv/releases/latest/download/Sohbet-Temizleyici-1.0.dmg) · [Tüm sürümler](https://github.com/kralldepo/claude_arsiv/releases)
 
@@ -191,6 +192,10 @@ Command Line Tools'ta SwiftUI'nin makro eklentisi bulunmadığı için kodda `@S
 - `SOHBET_CLAUDE_RUNNING=0` veya `1`: `SOHBET_HOME` ile birlikte verilirse Claude'un açık olup olmadığını taklit eder.
 
 </details>
+
+## Lisans
+
+[MIT](LICENSE). Kodu kullanabilir, değiştirebilir ve dağıtabilirsiniz; yalnızca telif ve lisans notunu korumanız gerekir. Yazılım "olduğu gibi" sunulur ve hiçbir garanti verilmez.
 
 ---
 
