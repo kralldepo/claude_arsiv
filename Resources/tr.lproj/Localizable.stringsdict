@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Empty on purpose. Turkish nouns do not change after a number, so the keys are used as they are.
+     Without this file macOS would take the English plural rules from en.lproj for Turkish too. -->
+<plist version="1.0">
+<dict/>
+</plist>

@@ -3,6 +3,8 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var store: Store
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,13 +36,21 @@ struct ContentView: View {
             }
         }
         .task { await store.rescan() }
+        .onAppear {
+            store.openMainWindow = { openWindow(id: "main") }
+            store.openSettingsWindow = { openSettings() }
+        }
+        .sheet(item: $store.previewItem) { item in
+            ConversationView(item: item)
+                .environmentObject(store)
+        }
         .confirmationDialog(trashTitle, isPresented: $store.confirmTrash, titleVisibility: .visible) {
             Button("Çöp Kutusuna Taşı", role: .destructive) {
                 Task { await store.trashSelected() }
             }
             Button("Vazgeç", role: .cancel) {}
         } message: {
-            Text("Toplam \(Fmt.size(store.selectedVisible.reduce(Int64(0)) { $0 + $1.size })). Çöp Kutusu'nu boşaltana kadar Finder'dan geri alabilirsiniz.")
+            Text(trashMessage)
         }
         .confirmationDialog(moveTitle, isPresented: $store.confirmMove, titleVisibility: .visible) {
             Button("Taşı") {
@@ -55,14 +65,23 @@ struct ContentView: View {
     private var trashTitle: String {
         let count = store.selectedVisible.count
         return store.tab == .chats
-            ? "Seçilen \(count) sohbet Çöp Kutusu'na taşınsın mı?"
-            : "Seçilen \(count) öğe Çöp Kutusu'na taşınsın mı?"
+            ? String(localized: "Seçilen \(count) sohbet Çöp Kutusu'na taşınsın mı?")
+            : String(localized: "Seçilen \(count) öğe Çöp Kutusu'na taşınsın mı?")
+    }
+
+    private var trashMessage: String {
+        let selected = store.selectedVisible
+        let size = Fmt.size(selected.reduce(Int64(0)) { $0 + $1.size })
+        var text = String(localized: "Toplam \(size). Çöp Kutusu'nu boşaltana kadar Geri Al düğmesiyle veya Finder'dan geri alabilirsiniz.")
+        let warnings = Set(selected.compactMap(\.warning)).sorted()
+        if !warnings.isEmpty { text += "\n\n" + warnings.joined(separator: "\n\n") }
+        return text
     }
 
     private var moveTitle: String {
         let count = store.movableSelection.count
         let target = store.targetSlot.map { store.slotLabel($0) } ?? ""
-        return "Seçilen \(count) oturum “\(target)” hesabına taşınsın mı?"
+        return String(localized: "Seçilen \(count) oturum “\(target)” hesabına taşınsın mı?")
     }
 }
 
@@ -106,20 +125,23 @@ private struct HeaderView: View {
 
     private var title: String {
         switch store.tab {
-        case .chats: return "Arka planda kalan sohbetler"
-        case .caches: return "Önbellek ve günlükler"
-        case .accounts: return "Hesaplar arası taşıma"
+        case .chats: return String(localized: "Arka planda kalan sohbetler")
+        case .caches: return String(localized: "Önbellek ve günlükler")
+        case .large: return String(localized: "Büyük dosyalar")
+        case .accounts: return String(localized: "Hesaplar arası taşıma")
         }
     }
 
     private var subtitle: String {
         switch store.tab {
         case .chats:
-            return "Claude uygulamasında artık görünmeyen ama diskte yer kaplayan sohbet kayıtları. Silmek istediklerinizi işaretleyin; Çöp Kutusu'na taşınırlar."
+            return String(localized: "Claude uygulamasında artık görünmeyen ama diskte yer kaplayan sohbet kayıtları. İsterseniz önce okuyun veya arşivleyin, sonra Çöp Kutusu'na taşıyın.")
         case .caches:
-            return "Claude'un biriktirdiği önbellek, günlük ve sahipsiz oturum dosyaları. Silinenler gerektiğinde yeniden oluşturulur."
+            return String(localized: "Claude'un biriktirdiği önbellek, günlük ve sahipsiz oturum dosyaları. Silinenler gerektiğinde yeniden oluşturulur.")
+        case .large:
+            return String(localized: "Claude'un indirip sakladığı büyük paketler ve eski sürümler. Her satırda silince ne olacağı yazar.")
         case .accounts:
-            return "Claude'daki oturumları bir hesaptan diğerine taşıyın. Sohbet içerikleri bu Mac'te kalır; yalnızca hangi hesapta göründüğü değişir."
+            return String(localized: "Claude'daki oturumları bir hesaptan diğerine taşıyın. Sohbet içerikleri bu Mac'te kalır; yalnızca hangi hesapta göründüğü değişir.")
         }
     }
 }
@@ -130,10 +152,23 @@ private struct CleanerView: View {
     @EnvironmentObject private var store: Store
 
     var body: some View {
+        if store.tab == .chats {
+            HStack(spacing: 0) {
+                ProjectSidebar()
+                    .frame(width: 230)
+                Divider()
+                listPane
+            }
+        } else {
+            listPane
+        }
+    }
+
+    private var listPane: some View {
         VStack(spacing: 0) {
             FilterBar()
-            if store.tab == .caches && store.claudeRunning {
-                Notice(text: "Claude şu an açık; önbellek ve günlükler kullanımda olduğu için kilitli. Claude'dan çıkın (⌘Q), liste kendiliğinden güncellenir.")
+            if store.tab != .chats && store.claudeRunning {
+                Notice(text: "Claude şu an açık; bu dosyalar kullanımda olduğu için kilitli. Claude'dan çıkın (⌘Q), liste kendiliğinden güncellenir.")
             }
             Group {
                 if !store.hasScanned {
@@ -149,6 +184,66 @@ private struct CleanerView: View {
     }
 }
 
+private struct ProjectSidebar: View {
+    @EnvironmentObject private var store: Store
+
+    var body: some View {
+        let total = store.chatBaseSummary
+        VStack(spacing: 0) {
+            List(selection: Binding<String?>(
+                get: { store.projectFilter },
+                set: { store.projectFilter = $0 ?? "*" }
+            )) {
+                Section("Projeler") {
+                    ProjectRow(symbol: "tray.2.fill", title: String(localized: "Tüm projeler"), count: total.count, size: total.size)
+                        .tag("*")
+                    ForEach(store.projectGroups) { group in
+                        ProjectRow(symbol: "folder.fill", title: Self.shortName(group.label), count: group.count, size: group.size)
+                            .tag(group.id)
+                            .help(group.label)
+                    }
+                }
+            }
+            .listStyle(.sidebar)
+            if store.protectedChatCount > 0 {
+                Toggle("Claude'da kayıtlı \(store.protectedChatCount) sohbeti de göster", isOn: $store.showProtected)
+                    .toggleStyle(.checkbox)
+                    .font(.callout)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+            }
+        }
+    }
+
+    private static func shortName(_ label: String) -> String {
+        let last = (label as NSString).lastPathComponent
+        return last.isEmpty ? label : last
+    }
+}
+
+private struct ProjectRow: View {
+    let symbol: String
+    let title: String
+    let count: Int
+    let size: Int64
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: symbol)
+                .foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .lineLimit(1)
+                Text("\(count) sohbet · \(Fmt.size(size))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
 private struct FilterBar: View {
     @EnvironmentObject private var store: Store
 
@@ -158,7 +253,8 @@ private struct FilterBar: View {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                TextField("Başlık veya klasör ara", text: $store.query)
+                TextField(store.searchContent && store.tab == .chats ? "Başlık, klasör veya mesaj ara" : "Başlık veya klasör ara",
+                          text: $store.query)
                     .textFieldStyle(.plain)
                 if !store.query.isEmpty {
                     Button {
@@ -173,26 +269,36 @@ private struct FilterBar: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
             .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
-            .frame(maxWidth: 300)
+            .frame(maxWidth: 280)
 
-            if store.tab == .chats && store.protectedChatCount > 0 {
-                Toggle("Claude'da kayıtlı \(store.protectedChatCount) sohbeti de göster", isOn: $store.showProtected)
+            if store.tab == .chats {
+                Toggle("İçerikte ara", isOn: $store.searchContent)
                     .toggleStyle(.checkbox)
+                    .help("Başlığın yanında mesajların içinde de arar. İlk aramada sohbetler okunur; biraz sürebilir.")
+                if store.isSearchingContent {
+                    ProgressView()
+                        .controlSize(.small)
+                }
             }
             Spacer()
             if store.isScanning && store.hasScanned {
                 ProgressView()
                     .controlSize(.small)
             }
-            Text(total.count == 0
-                 ? "Temizlenecek bir şey yok"
-                 : "\(total.count) \(store.tab == .chats ? "sohbet" : "öğe") · \(Fmt.size(total.size))")
+            Text(summary(total))
                 .font(.callout.weight(.medium))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
+    }
+
+    private func summary(_ total: (count: Int, size: Int64)) -> String {
+        if total.count == 0 { return String(localized: "Temizlenecek bir şey yok") }
+        return store.tab == .chats
+            ? String(localized: "\(total.count) sohbet · \(Fmt.size(total.size))")
+            : String(localized: "\(total.count) öğe · \(Fmt.size(total.size))")
     }
 }
 
@@ -209,53 +315,69 @@ private struct ItemTable: View {
                 .toggleStyle(.checkbox)
                 .labelsHidden()
                 .disabled(item.isLocked)
-                .help(item.isLocked ? item.status.help : "Silinecekler arasına ekle")
+                .help(item.isLocked ? item.status.help : String(localized: "Silinecekler arasına ekle"))
             }
             .width(22)
 
             TableColumn("Başlık", value: \.title) { item in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.title)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    Text(item.detail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.title)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                        Text(item.detail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture { store.toggle(item) }
+                    if item.kind == .chat {
+                        Button {
+                            store.previewItem = item
+                        } label: {
+                            Image(systemName: "text.bubble")
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Sohbeti oku")
+                    }
                 }
                 .padding(.vertical, 3)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture { store.toggle(item) }
                 .opacity(item.isLocked ? 0.55 : 1)
                 .help(item.preview ?? item.title)
                 .contextMenu {
+                    if item.kind == .chat {
+                        Button("Sohbeti Oku") { store.previewItem = item }
+                        Button("Markdown Olarak Arşivle…") { store.archive([item]) }
+                        Divider()
+                    }
                     Button("Finder'da Göster") {
                         NSWorkspace.shared.activateFileViewerSelecting(Array(item.urls.prefix(1)))
                     }
                 }
             }
-            .width(min: 260, ideal: 480)
+            .width(min: 180, ideal: 260)
 
             TableColumn("Son değişiklik", value: \.date) { item in
                 Text(Fmt.relative(item.date))
                     .foregroundStyle(.secondary)
                     .help(Fmt.absolute(item.date))
             }
-            .width(min: 110, ideal: 130, max: 170)
+            .width(min: 96, ideal: 120, max: 170)
 
             TableColumn("Boyut", value: \.size) { item in
                 Text(Fmt.size(item.size))
                     .monospacedDigit()
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .width(min: 70, ideal: 84, max: 110)
+            .width(min: 64, ideal: 80, max: 110)
 
             TableColumn("Durum", value: \.status) { item in
                 StatusBadge(label: item.status.label, symbol: item.status.symbol, tint: item.status.tint, help: item.status.help)
             }
-            .width(min: 150, ideal: 172, max: 210)
+            .width(min: 140, ideal: 172, max: 210)
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
     }
@@ -267,17 +389,23 @@ private struct EmptyStateView: View {
     var body: some View {
         if !store.query.isEmpty {
             ContentUnavailableView.search(text: store.query)
-        } else if store.tab == .chats {
-            ContentUnavailableView {
-                Label("Arka planda kalan sohbet yok", systemImage: "checkmark.seal")
-            } description: {
-                Text(store.protectedChatCount > 0
-                     ? "Diskteki \(store.protectedChatCount) sohbet hâlâ Claude'da kayıtlı. Onları silmek için önce Claude uygulamasından silin."
-                     : "Diskte sohbet kaydı bulunamadı.")
-            }
         } else {
-            ContentUnavailableView("Temizlenecek önbellek yok", systemImage: "sparkles",
-                                   description: Text("Claude'a ait önbellek veya günlük dosyası bulunamadı."))
+            switch store.tab {
+            case .chats:
+                ContentUnavailableView {
+                    Label("Arka planda kalan sohbet yok", systemImage: "checkmark.seal")
+                } description: {
+                    Text(store.protectedChatCount > 0
+                         ? String(localized: "Diskteki \(store.protectedChatCount) sohbet hâlâ Claude'da kayıtlı. Onları silmek için önce Claude uygulamasından silin.")
+                         : String(localized: "Diskte sohbet kaydı bulunamadı."))
+                }
+            case .large:
+                ContentUnavailableView("Büyük dosya yok", systemImage: "externaldrive",
+                                       description: Text("Claude'un indirdiği büyük paket veya eski sürüm bulunamadı."))
+            default:
+                ContentUnavailableView("Temizlenecek önbellek yok", systemImage: "sparkles",
+                                       description: Text("Claude'a ait önbellek veya günlük dosyası bulunamadı."))
+            }
         }
     }
 }
@@ -292,16 +420,29 @@ private struct ActionBar: View {
             Button("Tümünü Seç") { store.selectAllVisible() }
             Button("Seçimi Kaldır") { store.deselectAllVisible() }
                 .disabled(selected.isEmpty)
-            Menu("Eskileri Seç") {
-                Button("1 haftadan eski olanlar") { store.selectOlder(thanDays: 7) }
-                Button("1 aydan eski olanlar") { store.selectOlder(thanDays: 30) }
-                Button("3 aydan eski olanlar") { store.selectOlder(thanDays: 90) }
+            if store.tab != .large {
+                Menu("Eskileri Seç") {
+                    Button("1 haftadan eski olanlar") { store.selectOlder(thanDays: 7) }
+                    Button("1 aydan eski olanlar") { store.selectOlder(thanDays: 30) }
+                    Button("3 aydan eski olanlar") { store.selectOlder(thanDays: 90) }
+                }
+                .fixedSize()
             }
-            .fixedSize()
             Spacer()
-            Text(selected.isEmpty ? "Silmek istediklerinizi işaretleyin" : "\(selected.count) seçili · \(Fmt.size(size))")
+            Text(selected.isEmpty
+                 ? String(localized: "Silmek istediklerinizi işaretleyin")
+                 : String(localized: "\(selected.count) seçili · \(Fmt.size(size))"))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
+            if store.tab == .chats {
+                Button {
+                    store.archive(selected)
+                } label: {
+                    Label("Arşivle…", systemImage: "square.and.arrow.down")
+                }
+                .disabled(selected.isEmpty || store.isWorking)
+                .help("Seçilen sohbetleri okunabilir Markdown dosyaları olarak kaydeder; hiçbir şey silinmez.")
+            }
             Button(role: .destructive) {
                 store.confirmTrash = true
             } label: {
@@ -425,7 +566,7 @@ private struct SessionTable: View {
                 .toggleStyle(.checkbox)
                 .labelsHidden()
                 .disabled(session.hasWorktree)
-                .help(session.hasWorktree ? Self.worktreeHelp : "Taşınacaklar arasına ekle")
+                .help(session.hasWorktree ? Self.worktreeHelp : String(localized: "Taşınacaklar arasına ekle"))
             }
             .width(22)
 
@@ -466,11 +607,13 @@ private struct SessionTable: View {
 
             TableColumn("Durum") { session in
                 if session.hasWorktree {
-                    StatusBadge(label: "Taşınamaz", symbol: "lock.fill", tint: .gray, help: Self.worktreeHelp)
+                    StatusBadge(label: String(localized: "Taşınamaz"), symbol: "lock.fill", tint: .gray, help: Self.worktreeHelp)
                 } else if session.isArchived {
-                    StatusBadge(label: "Arşivde", symbol: "archivebox.fill", tint: .gray, help: "Claude'da arşivde. Taşınınca hedef hesapta da arşivde olur.")
+                    StatusBadge(label: String(localized: "Arşivde"), symbol: "archivebox.fill", tint: .gray,
+                                help: String(localized: "Claude'da arşivde. Taşınınca hedef hesapta da arşivde olur."))
                 } else {
-                    StatusBadge(label: "Listede", symbol: "list.bullet", tint: .blue, help: "Claude'un kenar çubuğunda görünüyor.")
+                    StatusBadge(label: String(localized: "Listede"), symbol: "list.bullet", tint: .blue,
+                                help: String(localized: "Claude'un kenar çubuğunda görünüyor."))
                 }
             }
             .width(min: 90, ideal: 104, max: 130)
@@ -478,7 +621,7 @@ private struct SessionTable: View {
         .tableStyle(.inset(alternatesRowBackgrounds: true))
     }
 
-    static let worktreeHelp = "Çalışma ağacında (worktree) açılmış oturumlar taşınmaz: Claude sahipsiz sandığı çalışma ağacı klasörünü temizleyebilir."
+    static let worktreeHelp = String(localized: "Çalışma ağacında (worktree) açılmış oturumlar taşınmaz: Claude sahipsiz sandığı çalışma ağacı klasörünü temizleyebilir.")
 }
 
 private struct MoveBar: View {
@@ -492,7 +635,9 @@ private struct MoveBar: View {
             Button("Seçimi Kaldır") { store.deselectAllSessions() }
                 .disabled(selectedCount == 0)
             Spacer()
-            Text(selectedCount == 0 ? "Taşınacak oturumları işaretleyin" : "\(selectedCount) seçili")
+            Text(selectedCount == 0
+                 ? String(localized: "Taşınacak oturumları işaretleyin")
+                 : String(localized: "\(selectedCount) seçili"))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
             Text("Hedef:")
@@ -515,7 +660,11 @@ private struct MoveBar: View {
             Button {
                 store.confirmMove = true
             } label: {
-                Label(chosen.isEmpty ? "Taşı" : "\(chosen.count) Oturumu Taşı", systemImage: "arrow.left.arrow.right")
+                if chosen.isEmpty {
+                    Label("Taşı", systemImage: "arrow.left.arrow.right")
+                } else {
+                    Label("\(chosen.count) Oturumu Taşı", systemImage: "arrow.left.arrow.right")
+                }
             }
             .buttonStyle(.borderedProminent)
             .disabled(chosen.isEmpty || store.targetSlot == nil || store.claudeRunning || store.isWorking || store.isScanning)
@@ -558,7 +707,7 @@ private extension ItemStatus {
 }
 
 private struct Notice: View {
-    let text: String
+    let text: LocalizedStringKey
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -590,8 +739,18 @@ private struct BannerView: View {
                 .lineLimit(3)
                 .textSelection(.enabled)
             Spacer()
-            Button("Çöp Kutusunu Aç") {
-                NSWorkspace.shared.open(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"))
+            ForEach(banner.actions, id: \.self) { action in
+                switch action {
+                case .undo:
+                    Button("Geri Al") { Task { await store.undoLastTrash() } }
+                        .disabled(store.lastTrash.isEmpty || store.isWorking)
+                case .openTrash:
+                    Button("Çöp Kutusunu Aç") {
+                        NSWorkspace.shared.open(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".Trash"))
+                    }
+                case .reveal(let url):
+                    Button("Finder'da Göster") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                }
             }
             Button {
                 store.banner = nil

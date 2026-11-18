@@ -47,6 +47,7 @@ struct Scanner {
         var transcriptIDs = Set<String>()
         var items = scanChats(desktop: desktop, transcriptIDs: &transcriptIDs)
         items += scanCaches(claudeRunning: claudeRunning)
+        items += LargeFiles.scan(claudeRunning: claudeRunning)
         if let orphans = scanOrphans(transcriptIDs: transcriptIDs, desktop: desktop) {
             items.append(orphans)
         }
@@ -101,7 +102,7 @@ struct Scanner {
             : nil
         let title = [known?.title, titleFile, peek.customTitle, peek.aiTitle, peek.agentName, peek.summary, peek.firstPrompt]
             .compactMap { $0?.oneLine.nonEmpty }
-            .first ?? "Başlıksız sohbet"
+            .first ?? String(localized: "Başlıksız sohbet")
 
         var place = peek.cwd.map(prettyPath) ?? decodeProjectFolder(project.lastPathComponent)
         if project.lastPathComponent.hasPrefix("ssh-") { place = "SSH · " + place }
@@ -109,7 +110,8 @@ struct Scanner {
         return CleanItem(
             id: file.path, kind: .chat, title: title, detail: place, date: modified,
             size: urls.reduce(Int64(0)) { $0 + fm.allocatedSize($1) }, status: status, urls: urls,
-            preview: peek.firstPrompt.map { "İlk mesaj: " + $0.clipped(500) }
+            preview: peek.firstPrompt.map { String(localized: "İlk mesaj: \($0.clipped(500))") },
+            project: project.lastPathComponent
         )
     }
 
@@ -117,27 +119,28 @@ struct Scanner {
 
     private func scanCaches(claudeRunning: Bool) -> [CleanItem] {
         struct Spec {
+            let key: String
             let title: String
             let detail: String
             let urls: [URL]
             let needsQuit: Bool
         }
         let specs = [
-            Spec(title: "Claude uygulama önbelleği",
-                 detail: "Web ve grafik önbellekleri; Claude açılınca yeniden oluşur",
+            Spec(key: "app", title: String(localized: "Claude uygulama önbelleği"),
+                 detail: String(localized: "Web ve grafik önbellekleri; Claude açılınca yeniden oluşur"),
                  urls: Env.desktopCacheDirs.map { Env.appSupport.appendingPathComponent($0, isDirectory: true) }
                      + [Env.caches.appendingPathComponent("com.anthropic.claudefordesktop", isDirectory: true)],
                  needsQuit: true),
-            Spec(title: "Claude günlük kayıtları",
+            Spec(key: "logs", title: String(localized: "Claude günlük kayıtları"),
                  detail: "~/Library/Logs/Claude",
                  urls: [Env.logs.appendingPathComponent("Claude", isDirectory: true)],
                  needsQuit: true),
-            Spec(title: "Claude Code önbelleği",
-                 detail: "~/Library/Caches/claude-cli-nodejs (MCP günlükleri vb.)",
+            Spec(key: "cli", title: String(localized: "Claude Code önbelleği"),
+                 detail: String(localized: "~/Library/Caches/claude-cli-nodejs (MCP günlükleri vb.)"),
                  urls: [Env.caches.appendingPathComponent("claude-cli-nodejs", isDirectory: true)],
                  needsQuit: true),
-            Spec(title: "Claude Code istem geçmişi",
-                 detail: "~/.claude/history.jsonl: terminalde yazdığınız istemlerin listesi",
+            Spec(key: "history", title: String(localized: "Claude Code istem geçmişi"),
+                 detail: String(localized: "~/.claude/history.jsonl: terminalde yazdığınız istemlerin listesi"),
                  urls: [Env.claudeDir.appendingPathComponent("history.jsonl")],
                  needsQuit: false),
         ]
@@ -146,10 +149,11 @@ struct Scanner {
             let size = existing.reduce(Int64(0)) { $0 + fm.allocatedSize($1) }
             guard size > 0 else { return nil }
             return CleanItem(
-                id: "cache:" + spec.title, kind: .cache, title: spec.title, detail: spec.detail,
+                id: "cache:" + spec.key, kind: .cache, title: spec.title, detail: spec.detail,
                 date: existing.compactMap { fm.modDate($0) }.max() ?? .distantPast,
                 size: size, status: spec.needsQuit && claudeRunning ? .needsQuit : .cleanable, urls: existing,
-                preview: existing.map { prettyPath($0.path) }.joined(separator: "\n")
+                preview: existing.map { prettyPath($0.path) }.joined(separator: "\n"),
+                needsClaudeClosed: spec.needsQuit
             )
         }
     }
@@ -181,8 +185,8 @@ struct Scanner {
         guard !urls.isEmpty else { return nil }
         let listed = urls.prefix(12).map { prettyPath($0.path) }.joined(separator: "\n")
         return CleanItem(
-            id: "cache:orphans", kind: .cache, title: "Sahipsiz oturum dosyaları",
-            detail: "Sohbeti artık olmayan oturumlardan kalan \(urls.count) klasör (dosya yedekleri, alt ajan kayıtları)",
+            id: "cache:orphans", kind: .cache, title: String(localized: "Sahipsiz oturum dosyaları"),
+            detail: String(localized: "Sohbeti artık olmayan oturumlardan kalan \(urls.count) klasör (dosya yedekleri, alt ajan kayıtları)"),
             date: urls.compactMap { fm.modDate($0) }.max() ?? .distantPast,
             size: urls.reduce(Int64(0)) { $0 + fm.allocatedSize($1) }, status: .cleanable, urls: urls,
             preview: urls.count > 12 ? listed + "\n…" : listed

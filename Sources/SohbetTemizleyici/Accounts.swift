@@ -50,7 +50,7 @@ enum AccountScanner {
                     found.append(DesktopSession(
                         file: file,
                         localID: localID,
-                        title: (record["title"] as? String)?.oneLine.nonEmpty ?? "Başlıksız oturum",
+                        title: (record["title"] as? String)?.oneLine.nonEmpty ?? String(localized: "Başlıksız oturum"),
                         place: cwd.isEmpty ? "" : prettyPath(cwd),
                         lastActivity: activityDate(record) ?? fm.modDate(file) ?? .distantPast,
                         isArchived: (record["isArchived"] as? Bool ?? false) || archived.contains(localID),
@@ -124,15 +124,15 @@ enum AccountMover {
             let sourceOrg = session.file.deletingLastPathComponent()
             let target = slot.dir.appendingPathComponent(session.file.lastPathComponent)
             guard !session.hasWorktree else {
-                outcome.failures.append("\(session.title): çalışma ağacında (worktree) açılmış oturumlar taşınmaz")
+                outcome.failures.append(String(localized: "\(session.title): çalışma ağacında (worktree) açılmış oturumlar taşınmaz"))
                 continue
             }
             guard isSessionRecord(session.file), isSessionRecord(target) else {
-                outcome.failures.append("\(session.title): izin verilmeyen konum")
+                outcome.failures.append(String(localized: "\(session.title): izin verilmeyen konum"))
                 continue
             }
             guard !fm.fileExists(atPath: target.path) else {
-                outcome.failures.append("\(session.title): hedef hesapta aynı kayıt zaten var")
+                outcome.failures.append(String(localized: "\(session.title): hedef hesapta aynı kayıt zaten var"))
                 continue
             }
             do {

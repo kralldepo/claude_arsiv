@@ -1,9 +1,10 @@
 import Foundation
 
-/// A row is either one conversation or one bundle of cache/log files.
+/// A row is one conversation, one bundle of cache/log files, or one large download Claude keeps.
 enum ItemKind: Sendable {
     case chat
     case cache
+    case large
 }
 
 /// Why an item can or cannot be deleted. The order is the sort order of the "Durum" column.
@@ -26,12 +27,12 @@ enum ItemStatus: Int, Comparable, Sendable {
 
     var label: String {
         switch self {
-        case .leftover: return "Arka planda kalmış"
-        case .cleanable: return "Temizlenebilir"
-        case .inUse: return "Şu an kullanımda"
-        case .archived: return "Claude'da arşivde"
-        case .active: return "Claude'da açık"
-        case .needsQuit: return "Önce Claude'u kapatın"
+        case .leftover: return String(localized: "Arka planda kalmış")
+        case .cleanable: return String(localized: "Temizlenebilir")
+        case .inUse: return String(localized: "Şu an kullanımda")
+        case .archived: return String(localized: "Claude'da arşivde")
+        case .active: return String(localized: "Claude'da açık")
+        case .needsQuit: return String(localized: "Önce Claude'u kapatın")
         }
     }
 
@@ -47,12 +48,12 @@ enum ItemStatus: Int, Comparable, Sendable {
 
     var help: String {
         switch self {
-        case .leftover: return "Claude uygulamasında artık görünmüyor; yalnızca diskte yer kaplıyor."
-        case .cleanable: return "Güvenle silinebilir; gerekirse yeniden oluşturulur."
-        case .inUse: return "Son 30 dakikada yazılmış; açık bir oturum olabilir, korunuyor."
-        case .archived: return "Claude'un arşivinde duruyor. Silmek için önce Claude uygulamasından silin."
-        case .active: return "Claude'un kenar çubuğunda duruyor. Silmek için önce Claude uygulamasından silin."
-        case .needsQuit: return "Claude açıkken kullanımda. Claude'dan çıkınca (⌘Q) kilit kalkar."
+        case .leftover: return String(localized: "Claude uygulamasında artık görünmüyor; yalnızca diskte yer kaplıyor.")
+        case .cleanable: return String(localized: "Güvenle silinebilir; gerekirse yeniden oluşturulur.")
+        case .inUse: return String(localized: "Son 30 dakikada yazılmış; açık bir oturum olabilir, korunuyor.")
+        case .archived: return String(localized: "Claude'un arşivinde duruyor. Silmek için önce Claude uygulamasından silin.")
+        case .active: return String(localized: "Claude'un kenar çubuğunda duruyor. Silmek için önce Claude uygulamasından silin.")
+        case .needsQuit: return String(localized: "Claude açıkken kullanımda. Claude'dan çıkınca (⌘Q) kilit kalkar.")
         }
     }
 }
@@ -69,20 +70,32 @@ struct CleanItem: Identifiable, Hashable, Sendable {
     let urls: [URL]
     /// Tooltip text: the conversation's first prompt, or the folders a cache row covers.
     let preview: String?
+    /// Chats: the Claude Code project folder the conversation belongs to.
+    var project: String? = nil
+    /// Large files: what happens after deleting, repeated in the confirmation dialog.
+    var warning: String? = nil
+    /// Only while Claude is closed: it uses these files while it runs.
+    var needsClaudeClosed = false
 
     var isLocked: Bool { status.isLocked }
+    /// The conversation file itself (chats only).
+    var transcript: URL? { kind == .chat ? urls.first : nil }
 }
 
 enum Fmt {
-    static let locale = Locale(identifier: "tr_TR")
+    /// Dates follow the language the app runs in (Turkish or English), not the Mac's region.
+    static let locale = Locale(identifier: Bundle.main.preferredLocalizations.first ?? "tr")
 
     static func size(_ bytes: Int64) -> String {
-        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        formatter.allowsNonnumericFormatting = false  // "0 bayt" instead of "Sıfır KB"
+        return formatter.string(fromByteCount: bytes)
     }
 
     static func relative(_ date: Date) -> String {
         let now = Date()
-        if abs(now.timeIntervalSince(date)) < 60 { return "az önce" }
+        if abs(now.timeIntervalSince(date)) < 60 { return String(localized: "az önce") }
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = locale
         formatter.unitsStyle = .full
@@ -91,6 +104,14 @@ enum Fmt {
 
     static func absolute(_ date: Date) -> String {
         date.formatted(Date.FormatStyle(date: .long, time: .shortened).locale(locale))
+    }
+
+    /// "2026-11-17" for file names.
+    static func day(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 }
 

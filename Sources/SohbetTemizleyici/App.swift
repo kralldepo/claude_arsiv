@@ -1,10 +1,15 @@
 import AppKit
 import SwiftUI
+import UserNotifications
 
 @main
 struct SohbetTemizleyiciApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var store = Store.shared
+    /// Not observed here on purpose: if every Store change rebuilt the scenes, MenuBarExtra would write its
+    /// binding back during each rebuild and the two would update each other forever (a crash at launch).
+    private let store = Store.shared
+    /// Same key Store saves to, so only a real change of this one setting rebuilds the scenes.
+    @AppStorage("showInMenuBar") private var menuBarShown = false
 
     init() {
         if let code = CLI.run(CommandLine.arguments) { exit(code) }
@@ -14,9 +19,9 @@ struct SohbetTemizleyiciApp: App {
         Window("Sohbet Temizleyici", id: "main") {
             ContentView()
                 .environmentObject(store)
-                .frame(minWidth: 860, minHeight: 520)
+                .frame(minWidth: 1000, minHeight: 540)
         }
-        .defaultSize(width: 1140, height: 720)
+        .defaultSize(width: 1180, height: 740)
         .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .appInfo) {
@@ -26,21 +31,76 @@ struct SohbetTemizleyiciApp: App {
                 Button("Yeniden Tara") { Task { await Store.shared.rescan() } }
                     .keyboardShortcut("r")
             }
+            CommandGroup(after: .undoRedo) {
+                UndoMenuItem()
+            }
             CommandGroup(replacing: .help) {
                 Button("GitHub Sayfası") { NSWorkspace.shared.open(AboutPanel.projectURL) }
             }
         }
+
+        Settings {
+            SettingsView()
+                .environmentObject(store)
+        }
+
+        // Writes go through Store only when the value really changes (the user turned it off in Settings
+        // or dragged the icon out of the menu bar); SwiftUI writing back the same value does nothing.
+        MenuBarExtra(isInserted: Binding(
+            get: { menuBarShown },
+            set: { shown in
+                if shown != Store.shared.showInMenuBar { Store.shared.showInMenuBar = shown }
+            }
+        )) {
+            MenuBarContent()
+                .environmentObject(store)
+        } label: {
+            Image(systemName: "bubble.left.and.bubble.right")
+        }
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+/// Edit menu item; it watches the Store itself so the App's scenes do not have to.
+private struct UndoMenuItem: View {
+    @ObservedObject private var store = Store.shared
+
+    var body: some View {
+        Button("Son Silmeyi Geri Al") { Task { await store.undoLastTrash() } }
+            .disabled(store.lastTrash.isEmpty)
+    }
+}
+
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+    /// With the menu bar item on, closing the window keeps the app running there.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        !Store.shared.showInMenuBar
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UNUserNotificationCenter.current().delegate = self
+        // A menu bar app without a window needs no Dock icon; opening the window brings it back.
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { note in
+            guard let window = note.object as? NSWindow, window.identifier?.rawValue.hasPrefix("main") == true else { return }
+            MainActor.assumeIsolated {
+                if Store.shared.showInMenuBar { NSApp.setActivationPolicy(.accessory) }
+            }
+        }
         let args = CommandLine.arguments
         if let index = args.firstIndex(of: "--snapshot"), index + 1 < args.count {
             Snapshot.capture(to: URL(fileURLWithPath: args[index + 1]), args: args)
         }
+    }
+
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                            withCompletionHandler completionHandler: @escaping () -> Void) {
+        Task { @MainActor in Store.shared.showMainWindow() }
+        completionHandler()
+    }
+
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
     }
 }
 
@@ -61,19 +121,20 @@ enum AboutPanel {
         link[.link] = projectURL
 
         let credits = NSMutableAttributedString(
-            string: "Claude'da silinen sohbetlerin Mac'te kalan kayıtlarını temizler ve Code oturumlarını hesaplar arasında taşır.\n\n",
+            string: String(localized: "Claude'da silinen sohbetlerin Mac'te kalan kayıtlarını temizler, arşivler ve Code oturumlarını hesaplar arasında taşır.") + "\n\n",
             attributes: text)
         credits.append(NSAttributedString(string: "github.com/kralldepo/claude_arsiv", attributes: link))
-        credits.append(NSAttributedString(string: "\n\nAnthropic ile bağlantılı değildir.", attributes: text))
+        credits.append(NSAttributedString(string: "\n\n" + String(localized: "Anthropic ile bağlantılı değildir."), attributes: text))
 
         NSApp.activate()
-        // An empty build version hides the "(1)" after "Sürüm 1.0".
+        // An empty build version hides the "(2)" after "Sürüm 1.1".
         NSApp.orderFrontStandardAboutPanel(options: [.credits: credits, .version: ""])
     }
 }
 
-/// Test helper: renders the window into a PNG after the first scan, then quits.
-/// Flags: --light / --dark, --caches / --accounts, --select, --about (captures the About panel instead).
+/// Test helper: renders a window into a PNG after the first scan, then quits.
+/// Flags: --light / --dark, --caches / --large / --accounts, --select,
+/// --about (the About panel), --settings (the Settings window) or --preview (the first chat's reading sheet).
 @MainActor
 enum Snapshot {
     static func capture(to output: URL, args: [String]) {
@@ -82,6 +143,7 @@ enum Snapshot {
         Task { @MainActor in
             let store = Store.shared
             if args.contains("--caches") { store.tab = .caches }
+            if args.contains("--large") { store.tab = .large }
             if args.contains("--accounts") { store.tab = .accounts }
             var waited = 0
             while !store.hasScanned && waited < 200 {
@@ -98,7 +160,7 @@ enum Snapshot {
                 }
             }
             NSApp.activate()
-            let main = NSApp.windows.first { $0.isVisible && !($0 is NSPanel) }
+            let main = NSApp.windows.first { $0.identifier?.rawValue.hasPrefix("main") == true && $0.isVisible }
             main?.setContentSize(NSSize(width: 1100, height: 680))
             main?.makeKeyAndOrderFront(nil)
             main?.makeFirstResponder(nil)  // no text cursor in the search field
@@ -110,10 +172,21 @@ enum Snapshot {
             try? await Task.sleep(nanoseconds: 800_000_000)
 
             var target = main
-            if args.contains("--about") {
+            if args.contains("--preview"), let chat = store.visible.first(where: { $0.kind == .chat }) {
+                store.previewItem = chat
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                target = main?.attachedSheet ?? main
+            } else if args.contains("--about") {
                 AboutPanel.show()
                 try? await Task.sleep(nanoseconds: 800_000_000)
                 target = NSApp.windows.first { $0 is NSPanel && $0.isVisible } ?? main
+            } else if args.contains("--settings") {
+                store.openSettingsWindow?()
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                target = NSApp.windows.first { $0.isVisible && $0.identifier?.rawValue.contains("Settings") == true } ?? main
+                target?.makeKeyAndOrderFront(nil)
+                target?.makeFirstResponder(nil)
+                try? await Task.sleep(nanoseconds: 300_000_000)
             }
             if let window = target, let view = window.contentView?.superview ?? window.contentView {
                 // Always 2x, whichever screen the window landed on.

@@ -66,6 +66,7 @@ cp Resources/Info.plist "$APP/Contents/Info.plist"
 if [[ -f Resources/AppIcon.icns ]]; then
   cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 fi
+cp -R Resources/*.lproj "$APP/Contents/Resources/"  # English and Turkish text
 codesign --force --sign - "$APP" >/dev/null 2>&1 || echo "Uyarı: imzalanamadı (uygulama yine de çalışır)."
 echo "Hazır: $PWD/$APP (sürüm $VERSION, $(lipo -archs "$APP/Contents/MacOS/$EXEC_NAME"), macOS $MIN_MACOS+)"
 

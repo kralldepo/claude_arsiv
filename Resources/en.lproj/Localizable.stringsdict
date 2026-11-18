@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>%lld Oturumu Taşı</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Move %lld Session</string>
+			<key>other</key>
+			<string>Move %lld Sessions</string>
+		</dict>
+	</dict>
+	<key>%lld dosya geri getirilemedi: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file could not be restored: %@</string>
+			<key>other</key>
+			<string>%lld files could not be restored: %@</string>
+		</dict>
+	</dict>
+	<key>%lld dosya taşınamadı: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file could not be moved: %@</string>
+			<key>other</key>
+			<string>%lld files could not be moved: %@</string>
+		</dict>
+	</dict>
+	<key>%lld mesaj · araç çıktıları gösterilmez</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld message · tool output is not shown</string>
+			<key>other</key>
+			<string>%lld messages · tool output is not shown</string>
+		</dict>
+	</dict>
+	<key>%lld oturum taşınamadı: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld session could not be moved: %@</string>
+			<key>other</key>
+			<string>%lld sessions could not be moved: %@</string>
+		</dict>
+	</dict>
+	<key>%lld oturum · son kullanım %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld session · last used %@</string>
+			<key>other</key>
+			<string>%lld sessions · last used %@</string>
+		</dict>
+	</dict>
+	<key>%lld oturum “%@” hesabına taşındı. Claude'u açıp o hesaba geçince görünür; eski kayıtlar Çöp Kutusu'nda.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Moved %lld session to “%@”. It shows up when you open Claude and switch to that account; the old record is in the Trash.</string>
+			<key>other</key>
+			<string>Moved %lld sessions to “%@”. They show up when you open Claude and switch to that account; the old records are in the Trash.</string>
+		</dict>
+	</dict>
+	<key>%lld sohbet %@ yer kaplıyor. Göz atmak için tıklayın.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld chat takes up %@. Click to take a look.</string>
+			<key>other</key>
+			<string>%lld chats take up %@. Click to take a look.</string>
+		</dict>
+	</dict>
+	<key>%lld sohbet Markdown olarak kaydedildi: %@. Silmek isterseniz şimdi Çöp Kutusu'na taşıyabilirsiniz.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Saved %lld chat as Markdown in %@. If you want to delete it, you can move it to the Trash now.</string>
+			<key>other</key>
+			<string>Saved %lld chats as Markdown in %@. If you want to delete them, you can move them to the Trash now.</string>
+		</dict>
+	</dict>
+	<key>%lld sohbet yazılamadı: %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld chat could not be written: %@</string>
+			<key>other</key>
+			<string>%lld chats could not be written: %@</string>
+		</dict>
+	</dict>
+	<key>%lld sohbet · %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld chat · %@</string>
+			<key>other</key>
+			<string>%lld chats · %@</string>
+		</dict>
+	</dict>
+	<key>%lld öğe eski yerine geri getirildi.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Put %lld item back where it was.</string>
+			<key>other</key>
+			<string>Put %lld items back where they were.</string>
+		</dict>
+	</dict>
+	<key>%lld öğe · %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld item · %@</string>
+			<key>other</key>
+			<string>%lld items · %@</string>
+		</dict>
+	</dict>
+	<key>%lld öğe Çöp Kutusu'na taşındı (%@).</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Moved %lld item to the Trash (%@).</string>
+			<key>other</key>
+			<string>Moved %lld items to the Trash (%@).</string>
+		</dict>
+	</dict>
+	<key>%lld öğe şu an kullanımda olduğu için atlandı.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Skipped %lld item because it is in use right now.</string>
+			<key>other</key>
+			<string>Skipped %lld items because they are in use right now.</string>
+		</dict>
+	</dict>
+	<key>Arka planda kalan: %lld sohbet · %@</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Left behind: %lld chat · %@</string>
+			<key>other</key>
+			<string>Left behind: %lld chats · %@</string>
+		</dict>
+	</dict>
+	<key>Claude'da kayıtlı %lld sohbeti de göster</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Also show %lld chat still listed in Claude</string>
+			<key>other</key>
+			<string>Also show %lld chats still listed in Claude</string>
+		</dict>
+	</dict>
+	<key>Diskteki %lld sohbet hâlâ Claude'da kayıtlı. Onları silmek için önce Claude uygulamasından silin.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld chat on disk is still listed in Claude. To delete it, delete it in the Claude app first.</string>
+			<key>other</key>
+			<string>%lld chats on disk are still listed in Claude. To delete them, delete them in the Claude app first.</string>
+		</dict>
+	</dict>
+	<key>Seçilen %lld oturum “%@” hesabına taşınsın mı?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Move %lld selected session to “%@”?</string>
+			<key>other</key>
+			<string>Move %lld selected sessions to “%@”?</string>
+		</dict>
+	</dict>
+	<key>Seçilen %lld sohbet bu klasöre Markdown dosyası olarak kaydedilecek.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld selected chat will be saved to this folder as a Markdown file.</string>
+			<key>other</key>
+			<string>%lld selected chats will be saved to this folder as Markdown files.</string>
+		</dict>
+	</dict>
+	<key>Seçilen %lld sohbet Çöp Kutusu'na taşınsın mı?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Move %lld selected chat to the Trash?</string>
+			<key>other</key>
+			<string>Move %lld selected chats to the Trash?</string>
+		</dict>
+	</dict>
+	<key>Seçilen %lld öğe Çöp Kutusu'na taşınsın mı?</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Move %lld selected item to the Trash?</string>
+			<key>other</key>
+			<string>Move %lld selected items to the Trash?</string>
+		</dict>
+	</dict>
+	<key>Sohbeti artık olmayan oturumlardan kalan %lld klasör (dosya yedekleri, alt ajan kayıtları)</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld folder left from sessions whose chat is gone (file backups, subagent records)</string>
+			<key>other</key>
+			<string>%lld folders left from sessions whose chat is gone (file backups, subagent records)</string>
+		</dict>
+	</dict>
+	<key>Tüm hesaplar · %lld oturum</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>All accounts · %lld session</string>
+			<key>other</key>
+			<string>All accounts · %lld sessions</string>
+		</dict>
+	</dict>
+	<key>claudevm.bundle içindeki %lld .zst dosyası; sanal makine çalışmaya devam eder</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld .zst file in claudevm.bundle; the virtual machine keeps working</string>
+			<key>other</key>
+			<string>%lld .zst files in claudevm.bundle; the virtual machine keeps working</string>
+		</dict>
+	</dict>
+</dict>
+</plist>
